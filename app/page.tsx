@@ -14,8 +14,101 @@ export default function Home() {
       <PricingSection />
       <FAQSection />
       <CredibilitySection />
+      <UploadSection />
       <Footer />
     </main>
+  );
+}
+
+function UploadSection() {
+  const [file, setFile] = useState<File | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFile(event.target.files[0]);
+      setMessage(null); // Clear previous messages
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!file) {
+      setMessage('Please select a file to upload.');
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('Uploading...');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`Upload successful: ${data.message}`);
+      } else {
+        setMessage(`Upload failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setMessage('Upload failed: An error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <section className="py-20 bg-gray-100" aria-label="Image Upload Section">
+      <div className="max-w-2xl mx-auto px-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          Upload Your Item's Photo
+        </h2>
+        <p className="text-lg text-gray-600 mb-8">
+          Take a picture of your item and upload it here to get a valuation.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-2">
+              Choose image file
+            </label>
+            <input
+              id="file-upload"
+              name="file-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500
+                         file:mr-4 file:py-2 file:px-4
+                         file:rounded-full file:border-0
+                         file:text-sm file:font-semibold
+                         file:bg-blue-50 file:text-blue-700
+                         hover:file:bg-blue-100"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading || !file}
+            className="w-full px-6 py-3 bg-[#0B5FFF] text-white font-semibold rounded-full hover:bg-[#001A66] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Uploading...' : 'Get Valuation'}
+          </button>
+        </form>
+        {message && (
+          <p className={`mt-4 text-sm ${message.startsWith('Upload failed') ? 'text-red-600' : 'text-green-600'}`}>
+            {message}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
